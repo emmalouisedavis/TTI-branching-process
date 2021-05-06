@@ -1,4 +1,4 @@
-Package: TTI-branching-process
+Package: ringbp
 Type: Package
 Title: TTI COVID-19 branching process model
 Version: 1.0.0
