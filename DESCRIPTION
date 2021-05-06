@@ -1,20 +1,17 @@
-Package: ringbp
+Package: TTI-branching-process
 Type: Package
-Title: Feasibility of controlling 2019-nCoV outbreaks by isolation of cases and contacts
-Version: 0.1.0
+Title: TTI COVID-19 branching process model
+Version: 1.0.0
 Authors@R: c(
-    person(given = "Joel Hellewell",
-           role = c("aut", "cre"),
-           email = "Joel.Hellewell@lshtm.ac.uk",
-           comment = c(ORCID = "0000-0003-2683-0849")),
-    person(given = "Sam Abbott",
+    person(given = "Emma Louise Davis",
            role = c("aut"),
-           email = "contact@samabbott.co.uk",
-           comment = c(ORCID = "0000-0001-8057-8037")),
-    person("Amy", "Gimma", 
-           email = "amy.gimma@lshtm.ac.uk", 
+           email = "Emma.Davis@bdi.ox.ac.uk",
+           comment = c(ORCID = "0000-0001-6261-775X")),
+    person(given = "Tim Lucas",
+           email = "timcdlucas@gmail.com",
+           comment = c(ORCID = "0000-0003-4694-8107")),
            role = c("aut")))
-Description: Feasibility of controlling 2019-nCoV outbreaks by isolation of cases and contacts.
+Description: UK test and trace COVID-19 branching process model.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
