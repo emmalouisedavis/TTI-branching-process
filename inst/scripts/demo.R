@@ -5,6 +5,7 @@ library(tictoc)
 library(ggplot2)
 library(patchwork)
 library(cowplot)
+library(latex2exp)
 library(furrr)
 library(sn)
 library(ggrepel)
@@ -13,41 +14,45 @@ library(svglite)
 
 rm(list = ls()) #clear workspace
 devtools::load_all() #load in ringbp package manually
+options(future.rng.onMisuse="ignore")
 
-no.samples <- 5 # number of iterations/simulations for each scenario
+no.samples <- 50 # number of iterations/simulations for each scenario
 cap_cases <- 2000 # maximum number of cases before terminating simulation
 max_days <- 300 # maximum number of days before terminating simulation
 
 set.seed(200518)
 
 # Example scenarios (30 in total)
-# Variable control effectiveness: 0, 0.4, 0.6, 0.8, 1.0
-# Variable index Rs: 1.1, 1.3, 1.5
+# Variable control effectiveness: 0, 0.2, 0.4, 0.6, 0.8
+# Variable index Rs: 1.5, 2.0, 2.5
 # Precationary isolation of negative testing individuals: 0, 7 (days)
 scenarios <- tidyr::expand_grid(
   ## Put parameters that are grouped by disease into this data.frame
   delay_group = list(tibble::tibble(
     delay = c("Adherence"),
-    delay_shape = c(0.9), # Probability symptomatic individual self-isolates
+    delay_shape = c(0.7),
     delay_scale = 1
   )),
-  inc_meanlog = 1.434065, # Incubation distribution meanlog
-  inc_sdlog = 0.6612, # Incubation distribution sdlog
-  inf_shape = 17.773185, # Infectiousness distribution shape
-  inf_rate = 1.388388, # Infectiousness distribution rate
-  inf_shift = 12.978985, # Infectiousness distribution shift
-  min_quar_delay = 1, # Min delay (days) to trace contacts
-  max_quar_delay = 1, # Max delay (days) to trace contacts
-  index_R0 = c(1.5,2.0,2.5), # Index Rs
-  prop.asym = c(0.4), # Proportion asymptomatic
-  control_effectiveness = c(0,seq(0.4, 1, 0.2)), # Proportion of contacts traced
-  self_report = 0.5, # Proportion of symptomatic individuals that self-report
-  test_delay = 2, # Time from isolation to test result
-  sensitivity = 0.65, # Test sensitivity
-  precaution = c(0,7), # Number of days stay in isolation if negative test
-  num.initial.cases = c(5)) %>% # Seed number of cases
+  inc_meanlog = 1.434065,
+  inc_sdlog = 0.6612,
+  inf_shape = 17.773185,
+  inf_rate = 1.388388,
+  inf_shift = 12.978985,
+  min_quar_delay = 1,
+  max_quar_delay = c(1),
+  index_R0 = c(1.5,2.0,2.5),
+  prop.asym = c(0.31),
+  control_effectiveness = seq(0, 0.8, 0.2),
+  self_report = c(0.5),
+  iso_adhere = c(0.65),
+  test_delay = c(2), #time from isolation to test result
+  sensitivity = c(0.65,0.95), #percent of cases detected
+  precaution = c(0,7), #this could be between 0 and 7? Number of days stay in isolation if negative test
+  num.initial.cases = c(5),
+  test_asym = c(FALSE)) %>%
   tidyr::unnest("delay_group") %>%
   dplyr::mutate(scenario = 1:dplyr::n())
+
 
 ## Parameterise fixed paramters
 sim_with_params <- purrr::partial(ringbp::scenario_sim,
@@ -58,11 +63,14 @@ sim_with_params <- purrr::partial(ringbp::scenario_sim,
                                   disp.com = 0.16,
                                   quarantine = TRUE)
 
+future::plan("multicore")
+
 ## Run parameter sweep through scenarios
 sweep_results <- ringbp::parameter_sweep(scenarios,
                                           sim_fn = sim_with_params,
                                           samples = no.samples,
-                                          show_progress = TRUE)
+                                          show_progress = TRUE,
+                                          earlyOut = FALSE)
 
 # Example plots:
 
@@ -106,5 +114,6 @@ Fig1 <- sweep_results %>%
   theme_cowplot(font_size = 16) +
   theme(strip.background =element_rect(fill="white")) +
   theme(legend.position=c(0.8,0.36),legend.title = element_text(size=14)) +
-  labs(tag="b",x='Contact tracing coverage',y="Prob. large outbreak")
+  labs(x='Contact tracing coverage',y="Prob. large outbreak")
 
+Fig1
