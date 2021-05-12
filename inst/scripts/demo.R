@@ -103,7 +103,7 @@ sweep_results$index_R0 <- factor(sweep_results$index_R0)
 sweep_results$index_R0 <- factor(sweep_results$index_R0, levels = rev(levels(sweep_results$index_R0)))
 
 Fig1 <- sweep_results %>%
-  mutate(index_R0 = factor(index_R0, labels = c('Rs=1.5','2.0','2.5'))) %>%
+  mutate(index_R0 = factor(index_R0, labels = c('Rs=2.5','2.0','1.5'))) %>%
   mutate(precaution = factor(precaution, labels = c('leave quarantine if negative', '7 day quarantine'))) %>%
   ggplot(aes(control_effectiveness, 1 - pext, colour = index_R0)) +
   ggplot2::scale_colour_manual(values = cbPalette[c(7,2,4)],guide="none") +
