@@ -15,7 +15,7 @@ library(testthat)
 library(svglite)
 
 #########################
-# General results (Figs 1b and 3c)
+# General results
 
 rm(list = ls())
 devtools::load_all()
@@ -852,27 +852,10 @@ sweep_results9 <- readRDS("data-raw/res_9.rds")
 
 sweep_results <- as_tibble(rbind(sweep_results1,sweep_results2,sweep_results2b,sweep_results3,sweep_results4,sweep_results5,
                                 sweep_results5b,sweep_results6,sweep_results7,sweep_results8,sweep_results8b,sweep_results9))
+sweep_results$scenario <- 1:nrow(sweep_results)
 
 # Clear redundant data frames from working memory
 sweep_results1 = sweep_results2 = sweep_results3 = sweep_results4 = sweep_results5 = sweep_results5b = sweep_results6 = sweep_results7 = sweep_results8 = sweep_results8b = sweep_results9 = sweep_results2b = c()
-
-# Expand results for no testing so they can be filtered for plotting later on
-# Same results hold for precaution =0,7 and test delay =0,2
-# temp1 <- sweep_results %>% filter(sensitivity==0) %>%
-#   mutate(precaution := 7)
-# temp2 <- sweep_results %>% filter(sensitivity==0) %>%
-#   mutate(precaution := 7) %>%
-#   mutate(test_delay := 4)
-# temp3 <- sweep_results %>% filter(sensitivity==0) %>%
-#   mutate(test_delay := 4)
-# temp <- rbind(temp1,temp2,temp3)
-# sweep_results <- rbind(sweep_results,temp)
-# temp = temp1 = temp2 = temp3 = c()
-sweep_results$scenario <- 1:nrow(sweep_results)
-
-no.samples <- 5000
-cap_cases <- 2000
-max_days <- 300
 
 # # # Save final combined results (DONE)
 saveRDS(sweep_results, file = "data-raw/res_complete.rds")
