@@ -17,7 +17,7 @@ library(lemon)
 
 
 #########################
-# Figures 1, 2 and 3
+# Figures S1, 1, 2 and 3
 
 rm(list = ls())
 devtools::load_all()
@@ -51,10 +51,10 @@ sweep_results <- sweep_results %>%
   dplyr::mutate(rel_Re = (mean_Re[which(control_effectiveness==0)]-mean_Re)/mean_Re[which(control_effectiveness==0)]) %>%
   dplyr::ungroup()
 
-# Parameter distributions (incubation, generation interval etc.)
-ringbp::make_figure_2()
+# Figure S1: Parameter distributions (incubation, generation interval etc.)
+ringbp::make_figure_S1()
 
-# Figs 1B and S1
+# Figs 1 and 2
 res <- sweep_results
 
 lower <- rep(NA,nrow(res))
@@ -146,8 +146,8 @@ Fig3 <- res %>%
   labs(x='Contact tracing coverage',y="Prob. large outbreak") +
   ylim(c(0,0.4))
 
-
-# Manipulate data for further plots
+################################
+# Manipulate data for Fig 4
 
 res2 <- list()
 week_range <- 40:42
@@ -209,7 +209,7 @@ total_cumulative_distr <- do.call(rbind, total_cumulative_distr$res) %>%
   mutate(max_quar_delay = factor(max_quar_delay, labels = c('instant tracing', '1 day delay', '2 day delay'))) %>%
   filter(outbreaks != 0)
 
-# Fig 3C
+# Fig 4
 T1 <- total_cumulative_distr
 
 lower <- rep(NA,nrow(T1))
@@ -228,16 +228,14 @@ T1 <- T1 %>% mutate(lower = lower,
 lower <- c()
 upper <- c()
 
-saveRDS(T1,'data-raw/Fig3C.rds')
-T1 <- readRDS('data-raw/Fig3C.rds')
-T1 <- T1 %>% filter(max_quar_delay=="1 day trace delay") %>%
-  mutate(max_quar_delay = " ")
+saveRDS(T1,'data-raw/Fig4.rds')
+T1 <- readRDS('data-raw/Fig4.rds')
 
 T1 <- T1 %>% mutate(control_effectiveness=factor(control_effectiveness,labels=c("no tracing","20%","40%","60%","80%")))
 T1 <- T1 %>% mutate(iso_adhere = factor(iso_adhere, labels = c('poor reporting & adherence', 'average reporting & adherence','average reporting & high adherence')))
 
 
-Fig3C <- T1 %>%
+Fig4 <- T1 %>%
   filter(sensitivity=="95%") %>%
   filter(max_quar_delay != "1 day delay") %>%
   filter(index_R0=="Rs = 1.3") %>%
@@ -257,248 +255,4 @@ Fig3C <- T1 %>%
   xlim(c(0,1000)) +
   ylim(c(0,1))
 
-save(file="data-raw/outbreakSize_plot.Rdata",Fig3C)
-
-
-#########################
-# Figure 2
-
-rm(list = ls())
-devtools::load_all()
-no.samples <- 5000
-cap_cases <- 2000
-max_days <- 300
-
-res <- readRDS("data-raw/res_Aug_perfectTracing.rds")
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-# boxplots for 100% contact tracing
-res <- res %>% group_by(scenario) %>%
-  mutate(trace_stats = list(trace_outs(sims[[1]]))) %>%
-  ungroup()
-
-res <- res %>% dplyr::filter(control_effectiveness == 1) %>%
-  dplyr::filter(max_quar_delay == 1) %>%
-  dplyr::filter(precaution == 7) %>%
-  dplyr::filter(test_delay == 2) %>%
-  dplyr::filter(sensitivity != 0) %>%
-  dplyr::filter(self_report != 0.1) %>%
-  dplyr::mutate(index_R0 = factor(index_R0, labels=c("1.1","1.3","1.5"))) %>%
-  dplyr::mutate(sensitivity = factor(sensitivity, labels=c("65% sensitive","95%")))  %>%
-  dplyr::mutate(self_report = factor(self_report, labels=c("50% self reporting","100%")))
-
-res <- res %>% unnest(trace_stats)
-
-Fig2 <- res %>% filter(cases>=20) %>%
-  mutate(precaution = factor(precaution,labels=" ")) %>%
-  ggplot(aes(index_R0,positive/cases,fill=index_R0,colour=index_R0)) + geom_boxplot(alpha=0.2) +
-  scale_fill_manual(values = cbPalette[c(4,2,7)],name="",guide=FALSE) +
-  scale_colour_manual(values = cbPalette[c(4,2,7)],name="",guide=FALSE) +
-  ggplot2::labs(x = TeX("Index $\\R_s$"),
-                y = 'Proportion cases detected') +
-  facet_rep_grid(self_report ~ sensitivity) +
-  theme_cowplot(font_size = 16) +
-  background_grid() +
-  theme(panel.spacing = unit(2, "lines")) +
-  theme(strip.background =element_rect(fill="white"),axis.line=element_line()) +
-  theme(legend.position=c(0.8,0.36),legend.title = element_text(size=14))
-
-save(file="data-raw/Fig2_perfectTraceBox.Rdata",Fig2)
-
-#########################
-# Figures 3a and b
-
-rm(list = ls())
-devtools::load_all()
-no.samples <- 5000
-cap_cases <- 2000
-max_days <- 300
-
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-seed.cases <- 5
-sweep_results <- readRDS("data-raw/res_Aug_missedChains_5cases.rds")
-sims <- rbind(sweep_results$sims[[3]],sweep_results$sims[[1]],sweep_results$sims[[2]])
-
-sims <- sims %>% group_by(index_R0) %>%
-  mutate(mid = median(early_missed,na.rm=T), lower = quantile(early_missed,0.05,na.rm=T),
-         upper = quantile(early_missed,0.95,na.rm=T)) %>%
-  ungroup()
-
-Fig3A <- ggplot(sims, aes(early_missed,group=index_R0,fill=index_R0,colour=index_R0)) +
-  geom_density(alpha=0.2) +
-  ggplot2::scale_fill_manual(values = cbPalette[c(4,2,7)],guide="none") +
-  ggplot2::scale_colour_manual(values = cbPalette[c(4,2,7)],name=TeX("Index $\\R_s$")) +
-  guides(color = guide_legend(override.aes = list(fill = cbPalette[c(4,2,7)]))) +
-  theme_cowplot(font_size = 16) +
-  theme(legend.position=c(0.8,0.85)) +
-  labs(tag="a",x='Outbreak size (cases) before first hospitalisation',y="Density") +
-  scale_x_continuous(limits=c(5,100),breaks=c(5,25,50,75,100)) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.1)],na.rm=T),
-             linetype=2,colour=cbPalette[4]) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.3)],na.rm=T),
-             linetype=2,colour=cbPalette[2]) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.5)],na.rm=T),
-             linetype=2,colour=cbPalette[7])
-
-seed.cases <- 100
-sweep_results <- readRDS("data-raw/res_Aug_missedChains_100cases.rds")
-sims <- rbind(sweep_results$sims[[3]],sweep_results$sims[[1]],sweep_results$sims[[2]])
-
-sims <- sims %>% group_by(index_R0) %>%
-  mutate(mid = median(early_missed,na.rm=T), lower = quantile(early_missed,0.05,na.rm=T),
-         upper = quantile(early_missed,0.95,na.rm=T)) %>%
-  ungroup()
-
-Fig3B <- ggplot(sims, aes(early_missed,group=index_R0,fill=index_R0,colour=index_R0)) +
-  geom_density(alpha=0.2) +
-  ggplot2::scale_fill_manual(values = cbPalette[c(4,2,7)],guide="none") +
-  ggplot2::scale_colour_manual(values = cbPalette[c(4,2,7)],name=TeX("Index $\\R_s$")) +
-  guides(color = guide_legend(override.aes = list(fill = cbPalette[c(4,2,7)]))) +
-  theme_cowplot(font_size = 16) +
-  theme(legend.position=c(0.8,0.85)) +
-  labs(tag="b",x='Outbreak size (cases) before first hospitalisation',y="") +
-  scale_x_continuous(limits=c(100,1000),breaks=c(100,250,500,750,1000)) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.1)],na.rm=T),
-             linetype=2,colour=cbPalette[4]) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.3)],na.rm=T),
-             linetype=2,colour=cbPalette[2]) +
-  geom_vline(xintercept=median(sims$early_missed[which(sims$index_R0==1.5)],na.rm=T),
-             linetype=2,colour=cbPalette[7])
-
-(Fig3A + Fig3B)/Fig3C
-
-sweep_results$sims[[1]] %>% group_by(sim) %>%
-  pos_cumulative
-
-# Plot looking at testing asymptomatics
-# FigS1 <- res %>%
-#   filter(test_delay==0.5) %>%
-#   filter(sensitivity==0.95) %>%
-#   filter(index_R0==1.3) %>%
-#   mutate(test_asym = factor(test_asym, labels = c('test on symptoms','test all contacts'))) %>%
-#   mutate(sensitivity = factor(sensitivity, labels = c('95% sensitvity'))) %>%
-#   mutate(iso_adhere = factor(iso_adhere, labels = c('poor reporting & adherence', 'average reporting & adherence','average reporting & high adherence'))) %>%
-#   ggplot(aes(control_effectiveness, 1 - pext, colour = test_asym)) +
-#   ggplot2::scale_colour_manual(values = cbPalette[c(7,2,4)],name=TeX("TTI strategy:")) +
-#   geom_line(lwd=1.1) +
-#   geom_point() +
-#   geom_linerange(aes(control_effectiveness,ymax=1-lower,ymin=1-upper),show.legend=FALSE) +
-#   facet_rep_grid(sensitivity ~ iso_adhere,scales='free', repeat.tick.labels = 'all') +
-#   coord_capped_cart(bottom='both', left='both') +
-#   theme_cowplot(font_size = 16) +
-#   background_grid() +
-#   theme(panel.spacing = unit(2, "lines")) +
-#   theme(strip.background =element_rect(fill="white"), axis.line=element_line()) +
-#   ggplot2::theme(legend.position = c(0.3,-0.25),legend.title=element_text(size=14),legend.direction = "horizontal",legend.box = "horizontal",plot.margin= grid::unit(c(0.1,0.1,3,0.1), 'lines')) +
-#   labs(x='Contact tracing coverage',y="Prob. large outbreak") +
-#   ylim(c(0,0.4))
-
-# FigS1 <- res %>%
-#   filter(test_asym == FALSE) %>%
-#   mutate(test_delay = factor(test_delay, labels = c('instant tracing','1 day','2 days'))) %>%
-#   mutate(iso_adhere = factor(iso_adhere, labels = c('poor reporting & adherence', 'average reporting & adherence','boosted adherence'))) %>%
-#   mutate(sensitivity = factor(sensitivity, labels = c('65%', '95%'))) %>%
-#   mutate(index_R0 = factor(index_R0)) %>%
-#   ggplot(aes(control_effectiveness, mean_Re, colour = index_R0, linetype = sensitivity)) +
-#   ggplot2::scale_colour_manual(values = cbPalette[c(7,2,4)],name=TeX("index $\\R_s$")) +
-#   geom_line(lwd=1.1) +
-#   geom_point() +
-#   geom_linerange(aes(control_effectiveness,ymax=mean_Re+1.96*sd_Re,ymin=mean_Re-1.96*sd_Re),show.legend=FALSE) +
-#   facet_rep_grid(test_delay ~ iso_adhere,scales='free', repeat.tick.labels = 'all') +
-#   coord_capped_cart(bottom='both', left='both') +
-#   theme_cowplot(font_size = 16) +
-#   background_grid() +
-#   theme(panel.spacing = unit(2, "lines")) +
-#   theme(strip.background =element_rect(fill="white"), axis.line=element_line()) +
-#   ggplot2::theme(legend.position = c(0.24,-0.1),legend.title=element_text(size=14),legend.direction = "horizontal",legend.box = "horizontal",plot.margin= grid::unit(c(0.1,0.1,2.5,0.1), 'lines')) +
-#   labs(x='Contact tracing coverage',y="Prob. large outbreak") #+
-#   ylim(c(0,0.6))
-
-# #########################
-# # Figure 1a
-#
-# rm(list = ls())
-# devtools::load_all()
-# no.samples <- 10000
-# cap_cases <- 2000
-# max_days <- 300
-#
-# sweep_results <- readRDS("data-raw/res_timetotest.rds")
-# falseNeg <- read.csv('data-raw/FalseNegative_kucirka.csv')
-#
-# # A colour-blind-friendly palette
-# cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-#
-# res1 <- sweep_results %>%
-#   filter(index_R0==1.3) %>%
-#   filter(control_effectiveness==0.6) %>%
-#   filter(max_quar_delay==1) %>%
-#   dplyr::group_by(scenario) %>%
-#   dplyr::mutate(pext = extinct_prob(sims[[1]], cap_cases = cap_cases, week_range = 40:42)) %>%
-#   dplyr::mutate(timetotest = list(unlist(sims[[1]]$timetotest))) %>%
-#   dplyr::ungroup(scenario)
-#
-# res2 <- sweep_results %>%
-#   filter(index_R0==1.3) %>%
-#   filter(control_effectiveness==0.6) %>%
-#   filter(max_quar_delay==4) %>%
-#   dplyr::group_by(scenario) %>%
-#   dplyr::mutate(pext = extinct_prob(sims[[1]], cap_cases = cap_cases, week_range = 40:42)) %>%
-#   dplyr::mutate(timetotest = list(unlist(sims[[1]]$timetotest))) %>%
-#   dplyr::ungroup(scenario)
-#
-# df_h1 <- data.frame(y=c(unlist(res1$timetotest[1]),unlist(res1$timetotest[2]),unlist(res1$timetotest[3])),delay=c(rep("4 days",length(unlist(res1$timetotest[1]))),rep("2 days",length(unlist(res1$timetotest[2]))),rep("0 days",length(unlist(res1$timetotest[3])))))
-# Fig1A <- df_h1 %>%
-#   ggplot() +
-#   geom_density(alpha=0.2,aes(y,y=..scaled..,fill=delay,colour=delay)) + theme(text = element_text(size = 16),plot.title = element_text(size = 16, face = "bold")) +
-#   ggplot2::scale_colour_manual(values = cbPalette[c(3,8,1)],name="test delay (density)") +
-#   ggplot2::scale_fill_manual(values = cbPalette[c(3,8,1)],name="test delay (density)") +
-#   xlim(c(0,15)) +
-#   geom_point(data=falseNeg, aes(x=Day,y=1-Mean)) +
-#   geom_linerange(data=falseNeg,aes(x=Day,ymax=1-Lower,ymin=1-Upper)) +
-#   geom_line(data=falseNeg, aes(x=seq(0,15,length.out=21),y=rep(0.65,21)),linetype=2,col="grey") +
-#   theme_cowplot(font_size = 16) +
-#   ggplot2::theme(legend.position = c(0.8,0.9), legend.title = element_text(size=14)) +
-#   labs(tag="a",x='Time tested (days post-exposure)',y='Sensitivity (Kucirka et al.)')
-#
-# save(file="data-raw/timetotest_plot.Rdata",Fig1A)
-
-#
-# Fig1B <- res %>%
-#   #filter(self_report == 0.5) %>%
-#   #filter(iso_adhere == 0.65) %>%
-#   #filter(delay_shape == 0.7) %>%
-#   filter(precaution == 7) %>%
-#   filter(test_asym == FALSE) %>%
-#   filter(sensitivity == c(0.95)) %>%
-#   mutate(test_delay = factor(test_delay, labels = c('1 day delay','4 day delay'))) %>%
-#   #mutate(precaution = factor(precaution, labels = c('leave quarantine if negative', '7 day quarantine'))) %>%
-#   #mutate(test_asym = factor(test_asym, labels = c('test all contacts','symptomatic testing only'))) %>%
-#   mutate(self_report = factor(self_report, labels = c('low','high'))) %>%
-#   mutate(index_R0 = factor(index_R0, labels = c('Rc = 1.3','1.5'))) %>%
-#   mutate(max_quar_delay = factor(max_quar_delay, labels = c('1 day trace delay','4 days'))) %>%
-#   ggplot(aes(control_effectiveness, 1 - pext, colour = index_R0, linetype=self_report, shape=self_report)) +
-#   ggplot2::scale_colour_manual(values = cbPalette[c(3,8,2)],name="Rc") +
-#   ggplot2::scale_linetype_manual(values = c(3,1,2,4),name="adherence") +
-#   ggplot2::scale_shape_manual(values = c(15,19,17,18),name="adherence") +
-#   geom_line() +
-#   geom_point(size=2) +
-#   geom_linerange(aes(control_effectiveness,ymax=1-lower,ymin=1-upper),show.legend=FALSE) +
-#   facet_rep_grid(test_delay ~ max_quar_delay) +
-#   theme_cowplot(font_size = 16) +
-#   background_grid() +
-#   theme(panel.spacing = unit(2, "lines")) +
-#   theme(strip.background =element_rect(fill="white"),axis.line=element_line()) +
-#   theme(legend.position=c(0.8,0.36),legend.title = element_text(size=14)) +
-#   labs(x='Contact tracing coverage',y="Prob. large outbreak") +
-#   ylim(c(0.09,0.45))
-#
-# save(file="data-raw/sensitivity_plot.Rdata",Fig1B)
-# # load("data-raw/sensitivity_plot.Rdata")
-#
-# Fig1A/Fig1B
-#
-# save(file="data-raw/precaution_plot.Rdata",FigS1)
-# # load("data-raw/precaution_plot.Rdata")
-# FigS1
+save(file="data-raw/outbreakSize_plot.Rdata",Fig4)
