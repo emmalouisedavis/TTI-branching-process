@@ -7,7 +7,7 @@ library(cowplot)
 
 #--- data ---
 # package: readxl
-data = data.frame(readxl::read_xlsx("data-raw/Fig1c_data.xlsx"))
+data = data.frame(readxl::read_xlsx("data-raw/He_2021_Fig1c_data.xlsx"))
 ref.date = as.Date("2020-01-01")
 data$x.lb <- as.numeric(as.Date(data$x.lb)-ref.date)
 data$x.ub <- as.numeric(as.Date(data$x.ub)-ref.date)
